@@ -35,6 +35,23 @@ function App() {
                 onDropdownChange={setDropdownValue}
                 onRangeChange={handleRangeChange}
             />
+            <div className="notification is-info" style={{marginBottom: '1rem'}}>
+                {dropdownValue === 'all_time' ? (
+                    <span>All time selected</span>
+                ) : dropdownValue === 'custom' ? (
+                    startDate && endDate ? (
+                        <span>Custom range: {startDate} to {endDate}</span>
+                    ) : (
+                        <span>No timespan selected</span>
+                    )
+                ) : (
+                    startDate && endDate ? (
+                        <span>Selected range: {startDate} to {endDate}</span>
+                    ) : (
+                        <span>No timespan selected</span>
+                    )
+                )}
+            </div>
             <div className="card">
                 <textarea
                     value={markdown}

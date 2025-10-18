@@ -19,6 +19,7 @@ const getTimeOptions = () => {
 
     const options = [
         {label: "Custom", value: 'custom'},
+        {label: "All time", value: 'all_time'},
         {label: "----", value: null},
         {label: 'Last day', value: 'last_day'},
         {label: 'Last week', value: 'last_week'},
@@ -71,6 +72,8 @@ const calculateTimespan = (dropdownValue: string): [string, string] => {
         }
     }
     switch (dropdownValue) {
+        case 'all_time':
+            return ['', ''];
         case 'last_day': {
             const yesterday = new Date(now);
             yesterday.setDate(now.getDate() - 1);
@@ -131,7 +134,11 @@ const TimespanSelector: React.FC<TimespanSelectorProps> = ({
 
     // When dropdown changes, update range unless "Custom" is selected
     useEffect(() => {
-        if (dropdownValue !== 'custom' && dropdownValue) {
+        if (dropdownValue === 'all_time') {
+            if (startDate !== '' || endDate !== '') {
+                onRangeChange('', '');
+            }
+        } else if (dropdownValue !== 'custom' && dropdownValue) {
             const [start, end] = calculateTimespan(dropdownValue);
             if (start && end && (start !== startDate || end !== endDate)) {
                 onRangeChange(start, end);
