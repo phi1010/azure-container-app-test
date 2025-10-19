@@ -1,4 +1,7 @@
-import React, {useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
+
 
 // Helper to get previous/current year and month names
 const getTimeOptions = () => {
@@ -18,20 +21,22 @@ const getTimeOptions = () => {
     const prevQuarterYear = currentQuarter === 1 ? year - 1 : year;
 
     const options = [
-        {label: "Custom", value: 'custom'},
+        //{label: "Custom", value: 'custom'},
+        {label: "----", value: null},
         {label: "All time", value: 'all_time'},
         {label: "----", value: null},
+        {label: "----", value: null},
         {label: 'Last day', value: 'last_day'},
+        {label: "----", value: null},
+        {label: "----", value: null},
         {label: 'Last week', value: 'last_week'},
         {label: "----", value: null},
         {label: months[currentMonthIndex], value: `month_${months[currentMonthIndex]}`},
         {label: 'Last month', value: 'last_month'},
         {label: months[prevMonthIndex], value: `month_${months[prevMonthIndex]}`},
-        {label: "----", value: null},
         {label: `Q${currentQuarter} ${year}`, value: `q${currentQuarter}_${year}`},
         {label: 'Last 3 months', value: 'last_3_months'},
         {label: `Q${prevQuarter} ${prevQuarterYear}`, value: `q${prevQuarter}_${prevQuarterYear}`},
-        {label: "----", value: null},
         {label: year.toString(), value: `year_${year}`},
         {label: 'Last year', value: 'last_year'},
         {label: prevYear.toString(), value: `year_${prevYear}`},
@@ -47,8 +52,9 @@ export interface TimespanSelectorProps {
     onRangeChange: (start: string, end: string) => void;
 }
 
+
 // Helper to calculate timespan string from dropdown selection
-const calculateTimespan = (dropdownValue: string): [string, string] => {
+export const calculateTimespan = (dropdownValue: string): [string, string] => {
     const now = new Date();
     const year = now.getFullYear();
     const prevYear = year - 1;
@@ -123,58 +129,109 @@ const calculateTimespan = (dropdownValue: string): [string, string] => {
     }
 };
 
+
 const TimespanSelector: React.FC<TimespanSelectorProps> = ({
-                                                               dropdownValue,
-                                                               startDate,
-                                                               endDate,
-                                                               onDropdownChange,
-                                                               onRangeChange
-                                                           }) => {
+    dropdownValue,
+    startDate,
+    endDate,
+    onDropdownChange,
+    onRangeChange
+}) => {
     const options = getTimeOptions();
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // When dropdown changes, update range unless "Custom" is selected
     useEffect(() => {
-        if (dropdownValue === 'all_time') {
-            if (startDate !== '' || endDate !== '') {
-                onRangeChange('', '');
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setDropdownOpen(false);
             }
-        } else if (dropdownValue !== 'custom' && dropdownValue) {
-            const [start, end] = calculateTimespan(dropdownValue);
-            if (start && end && (start !== startDate || end !== endDate)) {
-                onRangeChange(start, end);
-            }
-        }
-        // eslint-disable-next-line
-    }, [dropdownValue]);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
-    // If user edits either textbox, select "Custom"
+    const currentLabel = options.find(opt => opt.value === dropdownValue)?.label || '';
+    const gridCols = 3;
+    const gridRows: Array<Array<typeof options[0]>> = [];
+    for (let i = 0; i < options.length; i += gridCols) {
+        gridRows.push(options.slice(i, i + gridCols));
+    }
+
+    const handleButtonClick = (value: string | null) => {
+        if (value !== null) {
+            onDropdownChange(value);
+            setDropdownOpen(false);
+        }
+    };
     const handleStartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        onDropdownChange('custom');
         onRangeChange(e.target.value, endDate);
+        onDropdownChange('custom'); // Reset selected button
     };
     const handleEndChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        onDropdownChange('custom');
         onRangeChange(startDate, e.target.value);
+        onDropdownChange('custom'); // Reset selected button
     };
 
     return (
-        <div className="field is-horizontal" style={{marginBottom: '1rem'}}>
+        <div className="field is-horizontal" style={{ marginBottom: '1rem' }}>
             <div className="field-label is-normal">
                 <label className="label" htmlFor="timespan-select">Timespan:</label>
             </div>
             <div className="field-body">
                 <div className="field has-addons">
-                    <div className="control">
-                        <div className="select">
-                            <select
-                                id="timespan-select"
-                                value={dropdownValue || 'custom'}
-                                onChange={e => onDropdownChange(e.target.value)}
-                            >
-                                {options.map(opt => (
-                                    <option key={opt.label + opt.value} value={opt.value || 'custom'} disabled={opt.value === null}>{opt.label}</option>
-                                ))}
-                            </select>
+                    <div className="control" ref={dropdownRef} style={{ position: 'relative' }}>
+                        <div className={`dropdown${dropdownOpen ? ' is-active' : ''}`}>
+                            <div className="dropdown-trigger">
+                                <button
+                                    className="button is-light"
+                                    aria-haspopup="true"
+                                    aria-controls="dropdown-menu-timespan"
+                                    style={{
+                                        minWidth: '120px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between'
+                                    }}
+                                    onClick={() => setDropdownOpen(v => !v)}
+                                    type="button"
+                                >
+                                    <span>
+                                        {dropdownValue === 'custom' ? '' : currentLabel}
+                                    </span>
+                                    <span className="icon is-small">
+                                        <FontAwesomeIcon icon={faAngleDown} />
+                                    </span>
+                                </button>
+                            </div>
+                            <div className="dropdown-menu" id="dropdown-menu-timespan" role="menu">
+                                <div className="dropdown-content" style={{ padding: '8px', minWidth: '300px' }}>
+                                    <div
+                                        style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+                                            gap: '6px'
+                                        }}
+                                    >
+                                        {gridRows.map((row, rowIdx) =>
+                                            row.map((opt, colIdx) =>
+                                                opt.value === null ? (
+                                                    <div key={rowIdx + '-' + colIdx} />
+                                                ) : (
+                                                    <button
+                                                        key={opt.label + opt.value}
+                                                        className={`button is-small${dropdownValue === opt.value ? ' is-primary' : ''}`}
+                                                        style={{ width: '100%' }}
+                                                        onClick={() => handleButtonClick(opt.value)}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                )
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div className="control">
@@ -203,5 +260,6 @@ const TimespanSelector: React.FC<TimespanSelectorProps> = ({
         </div>
     );
 };
+
 
 export default TimespanSelector;

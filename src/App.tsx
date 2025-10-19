@@ -1,11 +1,11 @@
 import './App.css'
 import 'bulma/css/bulma.css';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
-import TimespanSelector from './TimespanSelector';
+import TimespanSelector, { calculateTimespan } from './TimespanSelector';
 
 // Extend the default schema to allow <mark> tag
 const customSchema = {
@@ -14,9 +14,7 @@ const customSchema = {
 };
 
 function App() {
-    // Default markdown value with some safe HTML tags, including <mark> and GFM features
     const [markdown, setMarkdown] = useState(`# Hello Markdown\n\nThis is **bold** and <i>italic</i> text.<br />\nHere is a <a href='https://example.com' target='_blank'>link</a> and some <code>inline code</code>.\n\n<ul><li>HTML list item 1</li><li>HTML list item 2</li></ul>\n\nHere is <mark>highlighted text</mark>.\n\n## GFM Features\n\n- [x] Task list item 1\n- [ ] Task list item 2\n\n~~Strikethrough~~\n\n| Table | Test |\n|-------|------|\n| Cell  | Cell |`);
-    // Timespan selection state
     const [dropdownValue, setDropdownValue] = useState('custom');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -25,6 +23,19 @@ function App() {
         setStartDate(start);
         setEndDate(end);
     };
+
+    // Update date range when dropdownValue changes (except for custom/all_time)
+    useEffect(() => {
+        if (dropdownValue !== 'custom' && dropdownValue !== 'all_time') {
+            const [start, end] = calculateTimespan(dropdownValue);
+            setStartDate(start);
+            setEndDate(end);
+        } else if (dropdownValue === 'all_time') {
+            setStartDate('');
+            setEndDate('');
+        }
+        // For 'custom', keep manual input
+    }, [dropdownValue]);
 
     return (
         <>
