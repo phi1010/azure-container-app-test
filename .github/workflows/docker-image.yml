@@ -15,4 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      run: |
+        docker login --username cr1012 --password ${{ secrets.AZURE_TOKEN }} cr1012-hbh4agf4hmc4afhe.azurecr.io
+        docker build . --file Dockerfile --tag cr1012-hbh4agf4hmc4afhe.azurecr.io/cr1012/webapp1012:latest
+        docker push ghcr.io/mert2m/actions-runner-controller:latest
