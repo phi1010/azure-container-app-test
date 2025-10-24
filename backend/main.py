@@ -33,7 +33,8 @@ class DummyPostResponse(BaseModel):
 @app.get("/api/dummy-get", response_model=DummyResponse)
 async def dummy_get(request: Request):
     log.error(f"Headers received: {request.headers!r}")
-    log.error(f"Environment: {os.environ!r}")
+    # Configured as MYSECRET env variable in Azure App Service
+    log.error(f"APPSETTING_MYSECRET: {os.environ.get("APPSETTING_MYSECRET","")!r}")
     return {
         "message": "This is a dummy GET reply",
         "status": "success"
