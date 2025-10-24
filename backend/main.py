@@ -3,6 +3,7 @@ import os
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import sys
 import logging
@@ -15,6 +16,9 @@ log.addHandler(stream_handler)
 
 app = FastAPI()
 
+app.mount("/static", StaticFiles(directory="dist"), name="static")
+
+
 
 class DummyResponse(BaseModel):
     message: str
@@ -26,7 +30,7 @@ class DummyPostResponse(BaseModel):
     received: dict
 
 
-@app.get("/dummy-get", response_model=DummyResponse)
+@app.get("/api/dummy-get", response_model=DummyResponse)
 async def dummy_get(request: Request):
     log.error(f"Headers received: {request.headers!r}")
     return {
@@ -35,7 +39,7 @@ async def dummy_get(request: Request):
     }
 
 
-@app.post("/dummy-post", response_model=DummyPostResponse, responses={
+@app.post("/api/dummy-post", response_model=DummyPostResponse, responses={
     200: {
         "description": "A dummy POST response",
         "content": {
@@ -58,4 +62,4 @@ async def dummy_post(request: Request):
 
 @app.get("/")
 def root():
-    return RedirectResponse(url="/dummy-get")
+    return RedirectResponse(url="/api/dummy-get")
